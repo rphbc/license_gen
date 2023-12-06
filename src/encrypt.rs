@@ -88,16 +88,15 @@ pub fn encrypt_lic() -> Result<(), Box<dyn Error>> {
 
         let signature: Signature = signing_key.sign(format!("license/{}", enc).as_bytes());
         // let signature: Signature = signing_key.sign( enc.as_bytes());
-        let sig64 = general_purpose::STANDARD.encode(signature.to_string());
+        let sig64 = general_purpose::STANDARD.encode(signature.to_bytes());
         println!("signature size: {}", signature.to_bytes().len());
 
 
-        let lic = LicenseModel{
-        
+        let lic: LicenseModel = LicenseModel{
             enc: enc,
             sig: sig64,
             alg: "aes-256-gcm+ed25519".to_string()
-          };
+        };
 
         let lic64 = general_purpose::STANDARD.encode(serde_json::json!(lic).to_string());
 
