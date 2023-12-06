@@ -44,10 +44,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         let license_key: &str = &args.license_key;
         let public_key: &str = &args.public_key;
         let lic_path: &str = &args.path;
-    
+
         let result = decrypt_license(license_key, public_key, lic_path).unwrap();
     }
-    
+
 
     Ok(())
 }
