@@ -1,16 +1,15 @@
-use aes_gcm::aead::generic_array::{typenum::U16, typenum::U32, GenericArray};
+use aes_gcm::aead::generic_array::{typenum::U32, GenericArray};
 use std::error::Error;
 use std::fs::File;
-use base64::{engine::general_purpose, Engine as _, alphabet::STANDARD};
+use base64::{engine::general_purpose, Engine as _};
 use std::io::{BufRead, BufReader, Write};
 use aes_gcm::{
     aead::{Aead, AeadCore, KeyInit, OsRng},
-    Aes256Gcm, Nonce, Key // Or `Aes128Gcm`
+    Aes256Gcm // Or `Aes128Gcm`
 };
-use sha2::{Sha256, Sha512, Digest};
-use hex::{FromHex, ToHex};
+use sha2::{Sha256, Digest};
 use ed25519_dalek::SigningKey;
-use ed25519_dalek::{Signature, Signer, SECRET_KEY_LENGTH, PUBLIC_KEY_LENGTH};
+use ed25519_dalek::{Signature, Signer};
 
 
 
@@ -60,11 +59,13 @@ pub fn encrypt_lic() -> Result<(), Box<dyn Error>> {
 
         let nonce = Aes256Gcm::generate_nonce(&mut OsRng); // 96-bits; unique per message
         let ciphertext = aes.encrypt(&nonce, txt_license.as_bytes().as_ref()).unwrap();
+        let ciphertextsliced: Vec<u8> = ciphertext.iter().copied().take(ciphertext.len()-16).collect();
         let cipherclone = ciphertext.clone();
-        let tag = &cipherclone[..4];
+        let tag: Vec<u8> = cipherclone.iter().copied().rev().take(16).rev().collect();
 
+        println!("cipher - {:?}", cipherclone);
 
-        let cipher64 = general_purpose::STANDARD.encode(ciphertext);
+        let cipher64 = general_purpose::STANDARD.encode(ciphertextsliced);
         let nonce64 = general_purpose::STANDARD.encode(nonce);
         let tag64 = general_purpose::STANDARD.encode(tag);
 
@@ -75,8 +76,11 @@ pub fn encrypt_lic() -> Result<(), Box<dyn Error>> {
         cipher_full.push_str(".");
         cipher_full.push_str(&tag64);
 
+        println!("cipher full - {:?}", cipher_full);
 
-        let enc = general_purpose::STANDARD.encode(cipher_full);
+
+        // let enc = general_purpose::STANDARD.encode(cipher_full);
+        let enc = cipher_full;
 
         let mut csprng = OsRng;
         let signing_key: SigningKey = SigningKey::generate(&mut csprng);

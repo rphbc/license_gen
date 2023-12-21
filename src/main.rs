@@ -1,10 +1,10 @@
 use aes_gcm::aead::generic_array::{typenum::U16, typenum::U32, GenericArray};
 use aes_gcm::aead::Aead;
-use aes_gcm::{Aes256Gcm, Key, KeyInit, Nonce, Tag};
+use aes_gcm::{Aes256Gcm, KeyInit, Nonce, Tag};
 use base64::{engine::general_purpose, Engine as _};
 use clap::Parser;
 use ed25519_dalek::{Verifier, VerifyingKey, PUBLIC_KEY_LENGTH, SIGNATURE_LENGTH};
-use hex::{FromHex, ToHex};
+use hex::FromHex;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::error::Error;
@@ -45,7 +45,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         let public_key: &str = &args.public_key;
         let lic_path: &str = &args.path;
 
-        let result = decrypt_license(license_key, public_key, lic_path).unwrap();
+        let _ = decrypt_license(license_key, public_key, lic_path).unwrap();
     }
 
 
@@ -129,6 +129,8 @@ fn decrypt_license(
 
     let digest: GenericArray<u8, U32> = sha.finalize();
 
+    println!("lic enc - {:?}", lic.enc);
+
     // Parse the encrypted data.
     let data: Vec<_> = lic
         .enc
@@ -141,15 +143,20 @@ fn decrypt_license(
         })
         .collect();
 
-    println!("TAG content - {:?}", data[2]);
+    println!("TAG content - {:?}", data);
 
     // Set up data and AES-GCM.
     let mut ciphertext = Vec::from(data[0].as_slice());
     let nonce = Nonce::from_slice(data[1].as_slice());
+
+    println!("Chegou 3");
     let tag: &GenericArray<u8, U16> = Tag::from_slice(data[2].as_slice());
-    let key: &GenericArray<u8, U32> = GenericArray::from_slice(&digest);
+    println!("Chegou 4");
+    let key:&GenericArray<u8, U32> = GenericArray::from_slice(&digest);
+    println!("Chegou 5");
     let aes = Aes256Gcm::new_from_slice(key)?;
 
+    println!("Chegou 6");
     // Concat authentication tag with ciphertext.
     ciphertext.extend_from_slice(tag);
 
